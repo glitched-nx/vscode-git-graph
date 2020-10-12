@@ -2,6 +2,10 @@
 
 View a Git Graph of your repository, and easily perform Git actions from the graph. Configurable to look the way you want!
 
+Additional feature improvements:
+
+* Added sticky header option
+
 ![Additions](https://github.com/MeetGundaniya/vscode-git-graph/raw/master/resources/demo.gif)
 
 ## Features
@@ -161,18 +165,21 @@ This extension contributes the following commands:
 
 Detailed Release Notes are available [here](CHANGELOG.md).
 
-## Credits
-
-This project is a fork of [mhutchie's vscode-git-graph](https://github.com/mhutchie/vscode-git-graph).
-
 ## Acknowledgements
 
-Thank you to all of the contributors that help with the development of Git Graph!
-- **mhutchie** - Original author of vscode-git-graph
+Special thanks to [@mhutchie](https://github.com/mhutchie/vscode-git-graph), the original author of vscode-git-graph, and all contributors for their support in developing Git Graph!
 
-Some of the icons used in Git Graph are from the following sources, please support them for their excellent work!
-- [GitHub Octicons](https://octicons.github.com/) ([License](https://github.com/primer/octicons/blob/master/LICENSE))
-- [Icons8](https://icons8.com/icon/pack/free-icons/ios11) ([License](https://icons8.com/license))
+<table>
+<tr>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/bendera>
+            <img src=https://avatars.githubusercontent.com/u/3748508?v=4 width="100;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px"/>
+            <br />
+            <sub style="font-size:14px"><b>Adam Bender</b></sub>
+        </a>
+    </td>
+</tr>
+</table>
 
 ### License
 This project is licensed under the same terms as the original repositories. Please refer to the respective LICENSE files for more details.
