@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import { CommitOrdering, DateType, DeepWriteable, ErrorInfo, ErrorInfoExtensionPrefix, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import {ActionedUser, CommitOrdering, DateType, DeepWriteable, ErrorInfo, ErrorInfoExtensionPrefix, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, GitVersionRequirement, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -140,12 +140,12 @@ export class DataSource extends Disposable {
 			this.getRemotes(repo),
 			showStashes ? this.getStashes(repo) : Promise.resolve([])
 		]).then((results) => {
+			/* eslint no-console: "error" */
 			return { branches: results[0].branches, head: results[0].head, remotes: results[1], stashes: results[2], error: null };
 		}).catch((errorMessage) => {
 			return { branches: [], head: null, remotes: [], stashes: [], error: errorMessage };
 		});
 	}
-
 	/**
 	 * Get the commits in a repository.
 	 * @param repo The path of the repository.
@@ -282,11 +282,14 @@ export class DataSource extends Disposable {
 		return Promise.all([
 			this.getConfigList(repo),
 			this.getConfigList(repo, GitConfigLocation.Local),
-			this.getConfigList(repo, GitConfigLocation.Global)
+			this.getConfigList(repo, GitConfigLocation.Global),
+			this.getAuthorList(repo)
 		]).then((results) => {
-			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2];
+			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2], authors = results[3];
 
 			const branches: GitRepoConfigBranches = {};
+			// const authors:ReadonlyArray<GitRepoConfigAuthor> = [];
+			console.warn(authors);
 			Object.keys(localConfigs).forEach((key) => {
 				if (key.startsWith('branch.')) {
 					if (key.endsWith('.remote')) {
@@ -304,10 +307,34 @@ export class DataSource extends Disposable {
 					}
 				}
 			});
-
+			console.warn({config: {
+				branches: branches,
+	 authors,
+				diffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffTool),
+				guiDiffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffGuiTool),
+				pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
+				remotes: remotes.map((remote) => ({
+					name: remote,
+					url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
+					pushUrl: getConfigValue(localConfigs, 'remote.' + remote + '.pushurl')
+				})),
+				user: {
+					name: {
+						local: getConfigValue(localConfigs, GitConfigKey.UserName),
+						global: getConfigValue(globalConfigs, GitConfigKey.UserName)
+					},
+					email: {
+						local: getConfigValue(localConfigs, GitConfigKey.UserEmail),
+						global: getConfigValue(globalConfigs, GitConfigKey.UserEmail)
+					}
+				}
+			},
+			error: null
+			});
 			return {
 				config: {
 					branches: branches,
+					 authors,
 					diffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffTool),
 					guiDiffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffGuiTool),
 					pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
@@ -330,11 +357,58 @@ export class DataSource extends Disposable {
 				error: null
 			};
 		}).catch((errorMessage) => {
+			console.log(errorMessage);
 			return { config: null, error: errorMessage };
 		});
 	}
 
-
+	private async getAuthorList(repo: string): Promise<ActionedUser[]> {
+		const args = ['shortlog', '-e', '-s', '-n', 'HEAD'];
+		const dict = new Set<string>();
+		const result = await this.spawnGit(args, repo, (authors) => {
+			return authors.split(/\r?\n/g)
+				.map(line => line.trim())
+				.filter(line => line.trim().length > 0)
+				.map(line => line.substring(line.indexOf('\t') + 1))
+				.map(line => {
+					const indexOfEmailSeparator = line.indexOf('<');
+					if (indexOfEmailSeparator === -1) {
+						return {
+							name: line.trim(),
+							email: ''
+						};
+					} else {
+						const nameParts = line.split('<');
+						const name = nameParts.shift()!.trim();
+						const email = nameParts[0].substring(0, nameParts[0].length - 1).trim();
+						return {
+							name,
+							email
+						};
+					}
+				})
+				.filter(item => {
+					if (dict.has(item.name)) {
+						return false;
+					}
+					dict.add(item.name);
+					return true;
+				})
+				.sort((a, b) => (a.name > b.name ? 1 : -1));
+		}).catch((errorMessage) => {
+			if (typeof errorMessage === 'string') {
+				const message = errorMessage.toLowerCase();
+				if (message.startsWith('fatal: unable to read config file') && message.endsWith('no such file or directory')) {
+					// If the Git command failed due to the configuration file not existing, return an empty list instead of throwing the exception
+					return {};
+				}
+			} else {
+				errorMessage = 'An unexpected error occurred while spawning the Git child process.';
+			}
+			throw errorMessage;
+		}) as Promise<ActionedUser[]>;
+		return result;
+	}
 	/* Get Data Methods - Commit Details View */
 
 	/**
