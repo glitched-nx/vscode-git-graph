@@ -161,10 +161,10 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns The commits in the repository.
 	 */
-	public getCommits(repo: string, branches: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
+	public getCommits(repo: string, branches: ReadonlyArray<string> | null, authors: ReadonlyArray<string> | null, maxCommits: number, showTags: boolean, showRemoteBranches: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, commitOrdering: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>): Promise<GitCommitData> {
 		const config = getConfig();
 		return Promise.all([
-			this.getLog(repo, branches, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
+			this.getLog(repo, branches, authors, maxCommits + 1, showTags && config.showCommitsOnlyReferencedByTags, showRemoteBranches, includeCommitsMentionedByReflogs, onlyFollowFirstParent, commitOrdering, remotes, hideRemotes, stashes),
 			this.getRefs(repo, showRemoteBranches, config.showRemoteHeads, hideRemotes).then((refData: GitRefData) => refData, (errorMessage: string) => errorMessage)
 		]).then(async (results) => {
 			let commits: GitCommitRecord[] = results[0], refData: GitRefData | string = results[1], i;
@@ -288,8 +288,6 @@ export class DataSource extends Disposable {
 			const consolidatedConfigs = results[0], localConfigs = results[1], globalConfigs = results[2], authors = results[3];
 
 			const branches: GitRepoConfigBranches = {};
-			// const authors:ReadonlyArray<GitRepoConfigAuthor> = [];
-			console.warn(authors);
 			Object.keys(localConfigs).forEach((key) => {
 				if (key.startsWith('branch.')) {
 					if (key.endsWith('.remote')) {
@@ -306,30 +304,6 @@ export class DataSource extends Disposable {
 						};
 					}
 				}
-			});
-			console.warn({config: {
-				branches: branches,
-	 authors,
-				diffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffTool),
-				guiDiffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffGuiTool),
-				pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
-				remotes: remotes.map((remote) => ({
-					name: remote,
-					url: getConfigValue(localConfigs, 'remote.' + remote + '.url'),
-					pushUrl: getConfigValue(localConfigs, 'remote.' + remote + '.pushurl')
-				})),
-				user: {
-					name: {
-						local: getConfigValue(localConfigs, GitConfigKey.UserName),
-						global: getConfigValue(globalConfigs, GitConfigKey.UserName)
-					},
-					email: {
-						local: getConfigValue(localConfigs, GitConfigKey.UserEmail),
-						global: getConfigValue(globalConfigs, GitConfigKey.UserEmail)
-					}
-				}
-			},
-			error: null
 			});
 			return {
 				config: {
@@ -357,7 +331,6 @@ export class DataSource extends Disposable {
 				error: null
 			};
 		}).catch((errorMessage) => {
-			console.log(errorMessage);
 			return { config: null, error: errorMessage };
 		});
 	}
@@ -1570,10 +1543,15 @@ export class DataSource extends Disposable {
 	 * @param stashes An array of all stashes in the repository.
 	 * @returns An array of commits.
 	 */
-	private getLog(repo: string, branches: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
+	private getLog(repo: string, branches: ReadonlyArray<string> | null, authors: ReadonlyArray<string> | null, num: number, includeTags: boolean, includeRemotes: boolean, includeCommitsMentionedByReflogs: boolean, onlyFollowFirstParent: boolean, order: CommitOrdering, remotes: ReadonlyArray<string>, hideRemotes: ReadonlyArray<string>, stashes: ReadonlyArray<GitStash>) {
 		const args = ['-c', 'log.showSignature=false', 'log', '--max-count=' + num, '--format=' + this.gitFormatLog, '--' + order + '-order'];
 		if (onlyFollowFirstParent) {
 			args.push('--first-parent');
+		}
+		if(authors !== null) {
+			for (let i = 0; i < authors.length; i++) {
+				args.push(`--author=${authors[i]} <`);
+			}
 		}
 		if (branches !== null) {
 			for (let i = 0; i < branches.length; i++) {
@@ -1593,7 +1571,6 @@ export class DataSource extends Disposable {
 					});
 				}
 			}
-
 			// Add the unique list of base hashes of stashes, so that commits only referenced by stashes are displayed
 			const stashBaseHashes = stashes.map((stash) => stash.baseHash);
 			stashBaseHashes.filter((hash, index) => stashBaseHashes.indexOf(hash) === index).forEach((hash) => args.push(hash));
@@ -1601,6 +1578,8 @@ export class DataSource extends Disposable {
 			args.push('HEAD');
 		}
 		args.push('--');
+
+
 
 		return this.spawnGit(args, repo, (stdout) => {
 			let lines = stdout.split(EOL_REGEX);
