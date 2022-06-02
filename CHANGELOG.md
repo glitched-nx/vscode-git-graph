@@ -1,7 +1,10 @@
 # Change Log
 
-## 1.31.0 - 2024-10-13
+## 1.31.2 - 2024-10-13
+* Add collapse/expand buttons to commit diff view. Thanks [@LariWa](https://github.com/LariWa)
 * Added sticky header option. Thanks [@bendera](https://github.com/bendera)
+
+## 1.31.1 - 2024-10-13
 * [mhutchie#132](https://github.com/mhutchie/vscode-git-graph/issues/132) Added sticky header option. Can be controlled via the setting `git-graph.stickyHeader`.
 * [mhutchie#557](https://github.com/mhutchie/vscode-git-graph/issues/557) Improved context menu click event handling.
 * [mhutchie#547](https://github.com/mhutchie/vscode-git-graph/issues/547) Improved Git backwards compatibility when force deleting branches.
