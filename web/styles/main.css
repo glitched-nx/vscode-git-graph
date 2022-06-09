@@ -351,6 +351,9 @@ code{
 .cdvControlBtn.active:hover{
 	background-color:rgba(128,128,128,0.35);
 }
+.cdvFolderBtn.hidden{
+	display:none;
+}
 
 #cdvCodeReview{
 	border-radius:4px;
