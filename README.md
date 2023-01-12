@@ -4,6 +4,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
 
 Additional feature improvements:
 
+* Added button to jump to HEAD
 * Added collapse/expand buttons to commit diff view
 * Added sticky header option
 
@@ -172,6 +173,13 @@ Special thanks to [@mhutchie](https://github.com/mhutchie/vscode-git-graph), the
 
 <table>
 <tr>
+    <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
+        <a href=https://github.com/QrackEE>
+            <img src=https://avatars.githubusercontent.com/u/8284135?v=4 width="100;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px"/>
+            <br />
+            <sub style="font-size:14px"><b>QrackEE</b></sub>
+        </a>
+    </td>
     <td align="center" style="word-wrap: break-word; width: 150.0; height: 150.0">
         <a href=https://github.com/LariWa>
             <img src=https://avatars.githubusercontent.com/u/40071882?v=4 width="100;"  style="border-radius:50%;align-items:center;justify-content:center;overflow:hidden;padding-top:10px"/>
