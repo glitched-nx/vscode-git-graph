@@ -1,5 +1,7 @@
 coverage
 media
 node_modules
+node_modules_
 out
 *.vsix
+package-lock.json
