@@ -1,9 +1,13 @@
 # Change Log
 
 ## 1.31.2 - 2024-10-13
-* Added button to jump to HEAD. Thanks [@QrackEE](https://github.com/QrackEE).
+* Highlight checked out commit head.
+* Move "Show Remote Branches" checkbox under settings menu.
+* Remove search icon from header bar.
+* Add hidden horizontal scroll for the branches.
+* Add button to jump to HEAD. Thanks [@QrackEE](https://github.com/QrackEE)
 * Add collapse/expand buttons to commit diff view. Thanks [@LariWa](https://github.com/LariWa)
-* Added sticky header option. Thanks [@bendera](https://github.com/bendera)
+* Add sticky header option. Thanks [@bendera](https://github.com/bendera)
 
 ## 1.31.1 - 2024-10-13
 * [mhutchie#132](https://github.com/mhutchie/vscode-git-graph/issues/132) Added sticky header option. Can be controlled via the setting `git-graph.stickyHeader`.

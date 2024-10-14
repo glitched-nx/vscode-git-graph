@@ -51,7 +51,6 @@ class GitGraphView {
 	private readonly tableElem: HTMLElement;
 	private tableColHeadersElem: HTMLElement | null;
 	private readonly footerElem: HTMLElement;
-	private readonly showRemoteBranchesElem: HTMLInputElement;
 	private readonly refreshBtnElem: HTMLElement;
 	private readonly scrollShadowElem: HTMLElement;
 
@@ -93,12 +92,6 @@ class GitGraphView {
 			this.requestLoadRepoInfoAndCommits(true, true);
 		});
 
-		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
-		this.showRemoteBranchesElem.addEventListener('change', () => {
-			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
-			this.refresh(true);
-		});
-
 		this.refreshBtnElem = document.getElementById('refreshBtn')!;
 		this.refreshBtnElem.addEventListener('click', () => {
 			if (!this.refreshBtnElem.classList.contains(CLASS_REFRESHING)) {
@@ -131,7 +124,6 @@ class GitGraphView {
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitTags, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
 			this.settingsWidget.restoreState(prevState.settingsWidget);
-			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
 
 		let loadViewTo = initialState.loadViewTo;
@@ -147,7 +139,7 @@ class GitGraphView {
 			this.requestLoadRepoInfoAndCommits(false, false);
 		}
 
-		const currentBtn = document.getElementById('currentBtn')!, fetchBtn = document.getElementById('fetchBtn')!, findBtn = document.getElementById('findBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
+		const currentBtn = document.getElementById('currentBtn')!, fetchBtn = document.getElementById('fetchBtn')!, settingsBtn = document.getElementById('settingsBtn')!, terminalBtn = document.getElementById('terminalBtn')!;
 		currentBtn.innerHTML = SVG_ICONS.current;
 		currentBtn.addEventListener('click', () => {
 			if (this.commitHead) {
@@ -157,8 +149,6 @@ class GitGraphView {
 		fetchBtn.title = 'Fetch' + (this.config.fetchAndPrune ? ' & Prune' : '') + ' from Remote(s)';
 		fetchBtn.innerHTML = SVG_ICONS.download;
 		fetchBtn.addEventListener('click', () => this.fetchFromRemotesAction());
-		findBtn.innerHTML = SVG_ICONS.search;
-		findBtn.addEventListener('click', () => this.findWidget.show(true));
 		settingsBtn.innerHTML = SVG_ICONS.gear;
 		settingsBtn.addEventListener('click', () => this.settingsWidget.show(this.currentRepo));
 		terminalBtn.innerHTML = SVG_ICONS.terminal;
@@ -215,7 +205,6 @@ class GitGraphView {
 	private loadRepo(repo: string) {
 		this.currentRepo = repo;
 		this.currentRepoLoading = true;
-		this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[this.currentRepo].showRemoteBranchesV2);
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitConfig = null;
 		this.gitRemotes = [];
@@ -867,18 +856,20 @@ class GitGraphView {
 				refBranches = '<span class="gitRef stash" data-name="' + refName + '">' + SVG_ICONS.stash + '<span class="gitRefName" data-fullref="' + refName + '">' + escapeHtml(commit.stash.selector.substring(5)) + '</span></span>' + refBranches;
 			}
 
-			const commitDot = commit.hash === this.commitHead
+			const checkedOutCommitHead = commit.hash === this.commitHead;
+			const commitDot = checkedOutCommitHead
 				? '<span class="commitHeadDot" title="' + (branchCheckedOutAtCommit !== null
 					? 'The branch ' + escapeHtml('"' + branchCheckedOutAtCommit + '"') + ' is currently checked out at this commit'
 					: 'This commit is currently checked out'
 				) + '."></span>'
 				: '';
 
+			const n = this.config.stickyHeader ? 0 : this.getNumColumns();
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (mutedCommits[i] ? ' mute' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' +
-				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td><span class="description">' + commitDot : '<td></td><td><span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
-				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + date.formatted + '</td>' : '') +
-				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
-				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + abbrevCommit(commit.hash) + '</td>' : '') +
+				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + this.getResizeColHtml(0, 0, n) + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td>' + this.getResizeColHtml(1, 1, n) + '<span class="description">' + commitDot : '<td>' + this.getResizeColHtml(0, 0, n) + '</td><td>' + this.getResizeColHtml(1, 1, n) + '<span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
+				(colVisibility.date ? '<td class="dateCol text' + (checkedOutCommitHead ? ' checkedOutCommitHead' : '') + '" title="' + date.title + '">' + this.getResizeColHtml(2, 2, n) + date.formatted + '</td>' : '') +
+				(colVisibility.author ? '<td class="authorCol text' + (checkedOutCommitHead ? ' checkedOutCommitHead' : '') + '" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + this.getResizeColHtml(3, 3, n) + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
+				(colVisibility.commit ? '<td class="text' + (checkedOutCommitHead ? ' checkedOutCommitHead' : '') + '" title="' + escapeHtml(commit.hash) + '">' + this.getResizeColHtml(4, 4, n) + abbrevCommit(commit.hash) + '</td>' : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
@@ -1711,6 +1702,9 @@ class GitGraphView {
 
 
 	/* Table Utils */
+	private getResizeColHtml(i: number, c: number, n: number) {
+		return n > 0 ? (i > 0 ? '<span class="resizeCol left" data-col="' + (c - 1) + '"></span>' : '') + (i < n - 1 ? '<span class="resizeCol right" data-col="' + c + '"></span>' : '') : '';
+	}
 
 	private makeTableResizable() {
 		let colHeadersElem = document.getElementById('tableColHeaders')!, cols = <HTMLCollectionOf<HTMLElement>>document.getElementsByClassName('tableColHeader');
@@ -1729,7 +1723,7 @@ class GitGraphView {
 
 		for (let i = 0; i < cols.length; i++) {
 			let col = parseInt(cols[i].dataset.col!);
-			cols[i].innerHTML += (i > 0 ? '<span class="resizeCol left" data-col="' + (col - 1) + '"></span>' : '') + (i < cols.length - 1 ? '<span class="resizeCol right" data-col="' + col + '"></span>' : '');
+			cols[i].innerHTML += this.getResizeColHtml(i, col, cols.length);
 		}
 
 		let cWidths = this.gitRepos[this.currentRepo].columnWidths;
@@ -1956,16 +1950,17 @@ class GitGraphView {
 		if (!this.tableColHeadersElem) {
 			return;
 		}
+		if (this.config.stickyHeader) {
+			const controlsHeight = this.controlsElem.offsetHeight;
+			const controlsWidth = this.controlsElem.offsetWidth;
+			const tableColHeadersHeight = this.tableColHeadersElem.offsetHeight;
+			const bottomBorderWidth = 1;
+			const shadowYPos = controlsHeight + tableColHeadersHeight + bottomBorderWidth;
 
-		const controlsHeight = this.controlsElem.offsetHeight;
-		const controlsWidth = this.controlsElem.offsetWidth;
-		const tableColHeadersHeight = this.tableColHeadersElem.offsetHeight;
-		const bottomBorderWidth = 1;
-		const shadowYPos = controlsHeight + tableColHeadersHeight + bottomBorderWidth;
-
-		this.tableColHeadersElem.style.top = `${controlsHeight}px`;
-		this.scrollShadowElem.style.top = `${shadowYPos}px`;
-		this.scrollShadowElem.style.width = `${controlsWidth}px`;
+			this.tableColHeadersElem.style.top = `${controlsHeight}px`;
+			this.scrollShadowElem.style.top = `${shadowYPos}px`;
+			this.scrollShadowElem.style.width = `${controlsWidth}px`;
+		}
 	}
 
 
@@ -2030,7 +2025,7 @@ class GitGraphView {
 	}
 
 	private observeViewScroll() {
-		let active = this.viewElem.scrollTop > 0, timeout: NodeJS.Timer | null = null;
+		let active = this.config.stickyHeader && this.viewElem.scrollTop > 0, timeout: NodeJS.Timer | null = null;
 		this.scrollShadowElem.className = active ? CLASS_ACTIVE : '';
 		this.viewElem.addEventListener('scroll', () => {
 			const scrollTop = this.viewElem.scrollTop;
@@ -2910,20 +2905,20 @@ class GitGraphView {
 		this.renderCdvFileViewTypeBtns();
 	}
 
-	private openFolders(open:boolean) {
+	private openFolders(open: boolean) {
 		let expandedCommit = this.expandedCommit;
 		if (expandedCommit === null || expandedCommit.fileTree === null) return;
 		let folders = document.getElementsByClassName('fileTreeFolder');
 		for (let i = 0; i < folders.length; i++) {
 			let sourceElem = <HTMLElement>(folders[i]);
 			let parent = sourceElem.parentElement!;
-			if(open) {
+			if (open) {
 				parent.classList.remove('closed');
 				sourceElem.children[0].children[0].innerHTML = SVG_ICONS.openFolder;
 				parent.children[1].classList.remove('hidden');
 				alterFileTreeFolderOpen(expandedCommit.fileTree, decodeURIComponent(sourceElem.dataset.folderpath!), true);
 
-			} else{
+			} else {
 				parent.classList.add('closed');
 				sourceElem.children[0].children[0].innerHTML = SVG_ICONS.closedFolder;
 				parent.children[1].classList.add('hidden');
@@ -3178,7 +3173,7 @@ class GitGraphView {
 		function setFolderBtns() {
 			let btns = document.getElementsByClassName('cdvFolderBtn');
 			for (let i = 0; i < btns.length; i++) {
-				if(listView)
+				if (listView)
 					btns[i].classList.add('hidden');
 				else
 					btns[i].classList.remove('hidden');
