@@ -229,7 +229,8 @@ code{
 	cursor:pointer;
 }
 
-#commitTable tr.commit.current span.description .text{
+#commitTable tr.commit.current span.description .text,
+#commitTable tr.commit.current td.text{
 	font-weight:bold;
 }
 
@@ -679,6 +680,10 @@ svg.openFolderIcon, svg.closedFolderIcon, svg.fileIcon{
 	margin-top:7px;
 	cursor:help;
 }
+.checkedOutCommitHead{
+	color: var(--git-graph-color);
+}
+
 #commitTable tr.commit:hover, #commitTable tr.commit.contextMenuActive, #commitTable tr.commit.findCurrentCommit:hover, #commitTable tr.commit.graphVertexActive, #commitTable tr.commit.dialogActive{
 	background-color:rgba(128,128,128,0.15);
 }
@@ -802,12 +807,13 @@ body.tagLabelsRightAligned .gitRef.tag{
 /* Controls */
 
 #controls{
-	display:block;
+	display:flex;
+	justify-content: space-evenly;
 	position: relative;
 	left:0;
 	right:0;
 	top:0;
-	padding:4px 132px 4px 0;
+	padding:2px 132px 2px 0;
 	background-color: var(--vscode-editor-background);
 	border-bottom:1px solid rgba(128,128,128,0.5);
 	line-height:32px;

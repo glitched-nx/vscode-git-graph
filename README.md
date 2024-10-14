@@ -4,6 +4,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
 
 Additional feature improvements:
 
+* Highlight checked out commit head
 * Move "Show Remote Branches" checkbox under settings menu
 * Remove search icon from header bar
 * Add hidden horizontal scroll for the branches

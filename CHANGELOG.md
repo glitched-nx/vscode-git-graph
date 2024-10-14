@@ -1,6 +1,7 @@
 # Change Log
 
 ## 1.31.2 - 2024-10-13
+* Highlight checked out commit head.
 * Move "Show Remote Branches" checkbox under settings menu.
 * Remove search icon from header bar.
 * Add hidden horizontal scroll for the branches.

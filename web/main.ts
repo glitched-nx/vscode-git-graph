@@ -856,19 +856,20 @@ class GitGraphView {
 				refBranches = '<span class="gitRef stash" data-name="' + refName + '">' + SVG_ICONS.stash + '<span class="gitRefName" data-fullref="' + refName + '">' + escapeHtml(commit.stash.selector.substring(5)) + '</span></span>' + refBranches;
 			}
 
-			const commitDot = commit.hash === this.commitHead
+			const checkedOutCommitHead = commit.hash === this.commitHead;
+			const commitDot = checkedOutCommitHead
 				? '<span class="commitHeadDot" title="' + (branchCheckedOutAtCommit !== null
 					? 'The branch ' + escapeHtml('"' + branchCheckedOutAtCommit + '"') + ' is currently checked out at this commit'
 					: 'This commit is currently checked out'
 				) + '."></span>'
 				: '';
 
-			let n = this.config.stickyHeader ? 0 : this.getNumColumns();
+			const n = this.config.stickyHeader ? 0 : this.getNumColumns();
 			html += '<tr class="commit' + (commit.hash === currentHash ? ' current' : '') + (mutedCommits[i] ? ' mute' : '') + '"' + (commit.hash !== UNCOMMITTED ? '' : ' id="uncommittedChanges"') + ' data-id="' + i + '" data-color="' + vertexColours[i] + '">' +
 				(this.config.referenceLabels.branchLabelsAlignedToGraph ? '<td>' + this.getResizeColHtml(0, 0, n) + (refBranches !== '' ? '<span style="margin-left:' + (widthsAtVertices[i] - 4) + 'px"' + refBranches.substring(5) : '') + '</td><td>' + this.getResizeColHtml(1, 1, n) + '<span class="description">' + commitDot : '<td>' + this.getResizeColHtml(0, 0, n) + '</td><td>' + this.getResizeColHtml(1, 1, n) + '<span class="description">' + commitDot + refBranches) + (this.config.referenceLabels.tagLabelsOnRight ? message + refTags : refTags + message) + '</span></td>' +
-				(colVisibility.date ? '<td class="dateCol text" title="' + date.title + '">' + this.getResizeColHtml(2, 2, n) + date.formatted + '</td>' : '') +
-				(colVisibility.author ? '<td class="authorCol text" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + this.getResizeColHtml(3, 3, n) + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
-				(colVisibility.commit ? '<td class="text" title="' + escapeHtml(commit.hash) + '">' + this.getResizeColHtml(4, 4, n) + abbrevCommit(commit.hash) + '</td>' : '') +
+				(colVisibility.date ? '<td class="dateCol text' + (checkedOutCommitHead ? ' checkedOutCommitHead' : '') + '" title="' + date.title + '">' + this.getResizeColHtml(2, 2, n) + date.formatted + '</td>' : '') +
+				(colVisibility.author ? '<td class="authorCol text' + (checkedOutCommitHead ? ' checkedOutCommitHead' : '') + '" title="' + escapeHtml(commit.author + ' <' + commit.email + '>') + '">' + this.getResizeColHtml(3, 3, n) + (this.config.fetchAvatars ? '<span class="avatar" data-email="' + escapeHtml(commit.email) + '">' + (typeof this.avatars[commit.email] === 'string' ? '<img class="avatarImg" src="' + this.avatars[commit.email] + '">' : '') + '</span>' : '') + escapeHtml(commit.author) + '</td>' : '') +
+				(colVisibility.commit ? '<td class="text' + (checkedOutCommitHead ? ' checkedOutCommitHead' : '') + '" title="' + escapeHtml(commit.hash) + '">' + this.getResizeColHtml(4, 4, n) + abbrevCommit(commit.hash) + '</td>' : '') +
 				'</tr>';
 		}
 		this.tableElem.innerHTML = '<table>' + html + '</table>';
