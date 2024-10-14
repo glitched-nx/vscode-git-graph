@@ -1,6 +1,7 @@
 # Change Log
 
 ## 1.31.2 - 2024-10-13
+* Move "Show Remote Branches" checkbox under settings menu.
 * Remove search icon from header bar.
 * Add hidden horizontal scroll for the branches.
 * Add button to jump to HEAD. Thanks [@QrackEE](https://github.com/QrackEE)

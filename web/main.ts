@@ -51,7 +51,6 @@ class GitGraphView {
 	private readonly tableElem: HTMLElement;
 	private tableColHeadersElem: HTMLElement | null;
 	private readonly footerElem: HTMLElement;
-	private readonly showRemoteBranchesElem: HTMLInputElement;
 	private readonly refreshBtnElem: HTMLElement;
 	private readonly scrollShadowElem: HTMLElement;
 
@@ -93,12 +92,6 @@ class GitGraphView {
 			this.requestLoadRepoInfoAndCommits(true, true);
 		});
 
-		this.showRemoteBranchesElem = <HTMLInputElement>document.getElementById('showRemoteBranchesCheckbox')!;
-		this.showRemoteBranchesElem.addEventListener('change', () => {
-			this.saveRepoStateValue(this.currentRepo, 'showRemoteBranchesV2', this.showRemoteBranchesElem.checked ? GG.BooleanOverride.Enabled : GG.BooleanOverride.Disabled);
-			this.refresh(true);
-		});
-
 		this.refreshBtnElem = document.getElementById('refreshBtn')!;
 		this.refreshBtnElem.addEventListener('click', () => {
 			if (!this.refreshBtnElem.classList.contains(CLASS_REFRESHING)) {
@@ -131,7 +124,6 @@ class GitGraphView {
 			this.loadCommits(prevState.commits, prevState.commitHead, prevState.gitTags, prevState.moreCommitsAvailable, prevState.onlyFollowFirstParent);
 			this.findWidget.restoreState(prevState.findWidget);
 			this.settingsWidget.restoreState(prevState.settingsWidget);
-			this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[prevState.currentRepo].showRemoteBranchesV2);
 		}
 
 		let loadViewTo = initialState.loadViewTo;
@@ -213,7 +205,6 @@ class GitGraphView {
 	private loadRepo(repo: string) {
 		this.currentRepo = repo;
 		this.currentRepoLoading = true;
-		this.showRemoteBranchesElem.checked = getShowRemoteBranches(this.gitRepos[this.currentRepo].showRemoteBranchesV2);
 		this.maxCommits = this.config.initialLoadCommits;
 		this.gitConfig = null;
 		this.gitRemotes = [];

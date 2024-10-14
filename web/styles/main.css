@@ -823,16 +823,8 @@ body.tagLabelsRightAligned .gitRef.tag{
 	z-index:12;
 }
 
-#repoControl, #branchControl, #showRemoteBranchesControl{
-	display:inline-block;
-	white-space:nowrap;
-	margin:0 10px;
-}
 #repoDropdown, #branchDropdown{
 	margin-left:3px;
-}
-#showRemoteBranchesControl > .customCheckbox{
-	margin-right:6px;
 }
 
 .dropdownCurrentValue{
