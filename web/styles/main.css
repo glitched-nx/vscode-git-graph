@@ -213,6 +213,11 @@ code{
 #commitTable td{
 	line-height:24px;
 	padding:0 4px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+#commitTable td::-webkit-scrollbar {
+    display: none;
 }
 #commitTable th{
 	border-bottom:1px solid transparent;
