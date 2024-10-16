@@ -468,10 +468,10 @@ export class DataSource extends Disposable {
 	 * @returns The comparison details.
 	 */
 	public getCommitComparison(repo: string, fromHash: string, toHash: string): Promise<GitCommitComparisonData> {
-		return Promise.all<DiffNameStatusRecord[], DiffNumStatRecord[], GitStatusFiles | null>([
-			this.getDiffNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-			this.getDiffNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash),
-			toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null)
+		return Promise.all([
+			this.getDiffNameStatus(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash) as Promise<DiffNameStatusRecord[]>,
+			this.getDiffNumStat(repo, fromHash, toHash === UNCOMMITTED ? '' : toHash) as Promise<DiffNumStatRecord[]>,
+			toHash === UNCOMMITTED ? this.getStatus(repo) : Promise.resolve(null) as Promise<GitStatusFiles | null>
 		]).then((results) => {
 			return {
 				fileChanges: generateFileChanges(results[0], results[1], results[2]),
@@ -575,6 +575,62 @@ export class DataSource extends Disposable {
 			details: null,
 			error: errorMessage
 		}));
+	}
+
+	/**
+	 * Check the submodules of a repository.
+	 * @param repo The path of the repository.
+	 * @returns A boolean value of whether the repository has submodules.
+	 */
+	public checkGitModuleFile(repo: string) {
+		return new Promise<boolean>((resolve) => {
+			const gitModulesPath = path.join(repo, '.gitmodules');
+
+			fs.access(gitModulesPath, fs.constants.F_OK, (err) => {
+				if (err) {
+					// File does not exist
+					resolve(false);
+					return;
+				}
+
+				// Read the .gitmodules file
+				fs.readFile(gitModulesPath, { encoding: 'utf8' }, (readErr, data) => {
+					if (readErr) {
+						resolve(false);
+						return;
+					}
+
+					const lines = data.split('\n');
+					let inSubmoduleSection = false;
+					const submoduleRegex = /^\s*\[submodule\s+"([^"]+)"\]\s*$/;
+
+					for (let line of lines) {
+						// Check if we are entering a submodule section
+						if (line.match(submoduleRegex) !== null) {
+							inSubmoduleSection = true;
+							continue;
+						}
+
+						// Check if we are in a submodule section and if it's not commented
+						if (inSubmoduleSection) {
+							// Reset the section flag if we encounter a new section
+							if (line.trim().startsWith('[')) {
+								inSubmoduleSection = false;
+							}
+
+							// If the line is a path property and not commented
+							if (/^\s*path\s+=\s+/.test(line.trim())) {
+								resolve(true); // Found at least one uncommented submodule
+								return;
+							}
+						}
+					}
+
+					// No uncommented submodules found
+					resolve(false);
+				});
+			});
+		});
 	}
 
 	/**
@@ -880,6 +936,79 @@ export class DataSource extends Disposable {
 		return results;
 	}
 
+	public getSubmodulesRepo(args: string[], repo: string): Promise<string[] | null> {
+		return this.spawnGit(args, repo, (stdout) => {
+			let result = stdout.trim()
+				.split('\n')
+				.filter(line => line.startsWith('Entering'))
+				.map(line => line.replace('Entering \'', '').replace('\'', ''))
+				.map(line => repo + '/' + line);
+			return result;
+		}).then((subject) => subject, () => null);
+	}
+
+	/**
+	 * Update the submodules in a repository.
+	 * @param repo The path of the repository.
+	 * @param currentBranch The branch of the current/parent repository.
+	 * @param init Is `--init` enabled.
+	 * @param recursive Is `--recursive` enabled.
+	 * @param remote The name of the remote upstream.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public async updateSubmodules(repo: string, currentBranch: string, init: boolean, recursive: boolean, alsoCheckout: boolean, remote: string | null) {
+		const args = ['submodule', 'update'];
+		const submodules_args = ['submodule', 'foreach'];
+
+		if (init) {
+			args.push('--init');
+		}
+		if (recursive) {
+			args.push('--recursive');
+			submodules_args.push('--recursive');
+		}
+		const result = await this.runGitCommand(args, repo);
+
+		if (alsoCheckout || remote) {
+
+			const submodules = await this.getSubmodulesRepo(submodules_args, repo);
+
+			if (!submodules) return result;
+
+			for (const submodulePath of submodules) {
+				const branchesContainingCommit = await this.spawnGit(['branch', '--all', '--contains'], submodulePath, (stdout) => {
+					let result = stdout.trim()
+						.split('\n')
+						.filter(line => !line.includes('detached'))
+						.map(line => line.match(/remotes\/[^/]+\/[^ ]+/g)?.[0]?.replace('remotes/origin/', ''))
+						.filter(branch => branch && branch.includes(currentBranch || ''));
+					return result;
+				});
+
+				if (!(branchesContainingCommit[0] && branchesContainingCommit[0] !== 'HEAD')) continue;
+
+				if (alsoCheckout) {
+					await this.checkoutBranch(submodulePath, currentBranch, null);
+				}
+
+				if (remote) {
+					let localHead = await this.spawnGit(['rev-parse', '@'], submodulePath, (stdout) => {
+						return stdout.trim();
+					});
+
+					let upstreamHead = await this.spawnGit(['rev-parse', '@{u}'], submodulePath, (stdout) => {
+						return stdout.trim();
+					});
+
+					if (localHead !== upstreamHead) {
+						this.pullBranch(submodulePath, currentBranch, remote, false, true, false);
+					}
+				}
+			}
+		}
+		return result;
+	}
+
 
 	/* Git Action Methods - Branches */
 
@@ -977,15 +1106,19 @@ export class DataSource extends Disposable {
 	 * @param branchName The name of the remote branch.
 	 * @param remote The name of the remote containing the remote branch.
 	 * @param createNewCommit Is `--no-ff` enabled if a merge is required.
+	 * @param noCommit Is `--no-commit` enabled if a merge is required.
 	 * @param squash Is `--squash` enabled if a merge is required.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, squash: boolean) {
+	public pullBranch(repo: string, branchName: string, remote: string, createNewCommit: boolean, noCommit: boolean, squash: boolean) {
 		const args = ['pull', remote, branchName], config = getConfig();
 		if (squash) {
 			args.push('--squash');
 		} else if (createNewCommit) {
 			args.push('--no-ff');
+		}
+		if (noCommit) {
+			args.push('--no-commit');
 		}
 		if (config.signCommits) {
 			args.push('-S');

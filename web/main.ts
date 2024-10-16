@@ -487,6 +487,7 @@ class GitGraphView {
 		if (msg.error === null) {
 			const refreshState = this.currentRepoRefreshState;
 			if (refreshState.inProgress && refreshState.loadRepoInfoRefreshId === msg.refreshId) {
+				this.gitRepos[this.currentRepo].hasSubmodule = msg.hasSubmodule;
 				this.loadRepoInfo(msg.branches, msg.head, msg.remotes, msg.stashes, msg.isRepo);
 			}
 		} else {
@@ -1023,6 +1024,10 @@ class GitGraphView {
 				visible: visibility.checkout && this.gitBranchHead !== refName,
 				onClick: () => this.checkoutBranchAction(refName, null, null, target)
 			}, {
+				title: 'Update Submodule' + ELLIPSIS,
+				visible: visibility.submodule && this.gitBranchHead === refName && this.gitRepos[this.currentRepo].hasSubmodule, // && Object.keys(this.gitRepos).length > 1,
+				onClick: () => this.updateSubmodulesAction(refName, null, target)
+			}, {
 				title: 'Rename Branch' + ELLIPSIS,
 				visible: visibility.rename,
 				onClick: () => {
@@ -1293,6 +1298,10 @@ class GitGraphView {
 				visible: visibility.checkout,
 				onClick: () => this.checkoutBranchAction(refName, remote, null, target)
 			}, {
+				title: 'Update Submodule' + ELLIPSIS,
+				visible: visibility.submodule && remote + '/' + this.gitBranchHead === refName && this.gitRepos[this.currentRepo].hasSubmodule, // && Object.keys(this.gitRepos).length > 1,
+				onClick: () => this.updateSubmodulesAction(refName, remote, target)
+			}, {
 				title: 'Delete Remote Branch' + ELLIPSIS,
 				visible: visibility.delete && remote !== '',
 				onClick: () => {
@@ -1323,9 +1332,10 @@ class GitGraphView {
 				onClick: () => {
 					dialog.showForm('Are you sure you want to pull the remote branch <b><i>' + escapeHtml(refName) + '</i></b> into ' + (this.gitBranchHead !== null ? '<b><i>' + escapeHtml(this.gitBranchHead) + '</i></b> (the current branch)' : 'the current branch') + '? If a merge is required:', [
 						{ type: DialogInputType.Checkbox, name: 'Create a new commit even if fast-forward is possible', value: this.config.dialogDefaults.pullBranch.noFastForward },
+						{ type: DialogInputType.Checkbox, name: 'Do not create merge commit even if fast-forward is possible', value: this.config.dialogDefaults.pullBranch.noCommit },
 						{ type: DialogInputType.Checkbox, name: 'Squash Commits', value: this.config.dialogDefaults.pullBranch.squash, info: 'Create a single commit on the current branch whose effect is the same as merging this remote branch.' }
 					], 'Yes, pull', (values) => {
-						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], squash: <boolean>values[1] }, 'Pulling Branch');
+						runAction({ command: 'pullBranch', repo: this.currentRepo, branchName: branchName, remote: remote, createNewCommit: <boolean>values[0], noCommit: <boolean>values[1], squash: <boolean>values[2] }, 'Pulling Branch');
 					}, target);
 				}
 			}
@@ -1685,6 +1695,7 @@ class GitGraphView {
 									branchName: refName.substring(remote.length + 1),
 									remote: remote,
 									createNewCommit: this.config.dialogDefaults.pullBranch.noFastForward,
+									noCommit: this.config.dialogDefaults.pullBranch.noCommit,
 									squash: this.config.dialogDefaults.pullBranch.squash
 								}
 								: null
@@ -1745,8 +1756,29 @@ class GitGraphView {
 		}, target);
 	}
 
+	private updateSubmodulesAction(refName: string, remote: string | null, target: DialogTarget & (CommitTarget | RefTarget)) {
+		const inputs: DialogInput[] = [
+			{ type: DialogInputType.Checkbox, name: 'init', value: true },
+			{ type: DialogInputType.Checkbox, name: 'recursive', value: true },
+			{ type: DialogInputType.Checkbox, name: 'checkout submodule\'s branch too', value: true }
+		];
+
+		dialog.showForm('Are you sure you want to <b> update' + (remote ? ' and pull' : '') + '</b> submodule(s) for the branch <b><i>' + escapeHtml(refName) + '</i></b>' + '?', inputs, 'Yes, update', (values) => {
+			runAction({
+				command: 'updateSubmodules',
+				repo: this.currentRepo,
+				currentBranch: this.gitBranchHead || '',
+				init: <boolean>values[0],
+				recursive: <boolean>values[1],
+				alsoCheckout: <boolean>values[2],
+				remote: remote
+			}, 'Updating submodules');
+		}, target);
+	}
+
 
 	/* Table Utils */
+
 	private getResizeColHtml(i: number, c: number, n: number) {
 		return n > 0 ? (i > 0 ? '<span class="resizeCol left" data-col="' + (c - 1) + '"></span>' : '') + (i < n - 1 ? '<span class="resizeCol right" data-col="' + c + '"></span>' : '') : '';
 	}
@@ -3527,6 +3559,9 @@ window.addEventListener('load', () => {
 				if (msg.error !== null) {
 					dialog.showError('Unable to update Code Review', msg.error, null, null);
 				}
+				break;
+			case 'updateSubmodules':
+				finishOrDisplayError(msg.error, 'Unable to Update Submodule', true);
 				break;
 			case 'viewDiff':
 				finishOrDisplayError(msg.error, 'Unable to View Diff');
