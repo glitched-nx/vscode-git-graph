@@ -4,6 +4,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
 
 Additional feature improvements:
 
+* Create a patch file from the stash
 * Enable filtering by double-clicking the author column
 * Highlight checked out commit head
 * Move "Show Remote Branches" checkbox under settings menu

@@ -1405,6 +1405,10 @@ class GitGraphView {
 					}, target);
 				}
 			}, {
+				title: 'Create Patch from Stash' + ELLIPSIS,
+				visible: visibility.createPatch,
+				onClick: () => runAction({ command: 'patchFromStash', repo: this.currentRepo, selector: selector }, 'Creating Patch')
+			}, {
 				title: 'Pop Stash' + ELLIPSIS,
 				visible: visibility.pop,
 				onClick: () => {
@@ -3447,6 +3451,9 @@ window.addEventListener('load', () => {
 				break;
 			case 'openTerminal':
 				finishOrDisplayError(msg.error, 'Unable to Open Terminal', true);
+				break;
+			case 'patchFromStash':
+				refreshOrDisplayError(msg.error, 'Unable to Create Patch file from Stash');
 				break;
 			case 'popStash':
 				refreshOrDisplayError(msg.error, 'Unable to Pop Stash');

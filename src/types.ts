@@ -107,9 +107,9 @@ export interface GitRepoConfig {
 }
 
 export type GitRepoConfigBranches = { [branchName: string]: GitRepoConfigBranch };
-export interface ActionedUser{
-    name: string;
-    email: string;
+export interface ActionedUser {
+	name: string;
+	email: string;
 };
 export interface GitRepoConfigBranch {
 	readonly pushRemote: string | null;
@@ -401,6 +401,7 @@ export interface ContextMenuActionsVisibility {
 	readonly stash: {
 		readonly apply: boolean;
 		readonly createBranch: boolean;
+		readonly createPatch: boolean;
 		readonly pop: boolean;
 		readonly drop: boolean;
 		readonly copyName: boolean;
@@ -1026,6 +1027,14 @@ export interface ResponseOpenTerminal extends ResponseWithErrorInfo {
 	readonly command: 'openTerminal';
 }
 
+export interface RequestPatchFromStash extends RepoRequest {
+	readonly command: 'patchFromStash';
+	readonly selector: string;
+}
+export interface ResponsePatchFromStash extends ResponseWithErrorInfo {
+	readonly command: 'patchFromStash';
+}
+
 export interface RequestPopStash extends RepoRequest {
 	readonly command: 'popStash';
 	readonly selector: string;
@@ -1293,6 +1302,7 @@ export type RequestMessage =
 	| RequestOpenExternalUrl
 	| RequestOpenFile
 	| RequestOpenTerminal
+	| RequestPatchFromStash
 	| RequestPopStash
 	| RequestPruneRemote
 	| RequestPullBranch
@@ -1356,6 +1366,7 @@ export type ResponseMessage =
 	| ResponseOpenExternalUrl
 	| ResponseOpenFile
 	| ResponseOpenTerminal
+	| ResponsePatchFromStash
 	| ResponsePopStash
 	| ResponsePruneRemote
 	| ResponsePullBranch
