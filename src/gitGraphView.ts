@@ -482,6 +482,12 @@ export class GitGraphView extends Disposable {
 					error: await this.dataSource.openGitTerminal(msg.repo, null, msg.name)
 				});
 				break;
+			case 'patchFromStash':
+				this.sendMessage({
+					command: 'patchFromStash',
+					error: await this.dataSource.patchFromStash(msg.repo, msg.selector)
+				});
+				break;
 			case 'popStash':
 				this.sendMessage({
 					command: 'popStash',

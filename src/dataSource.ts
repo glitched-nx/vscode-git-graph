@@ -6,7 +6,7 @@ import * as vscode from 'vscode';
 import { AskpassEnvironment, AskpassManager } from './askpass/askpassManager';
 import { getConfig } from './config';
 import { Logger } from './logger';
-import {ActionedUser, CommitOrdering, DateType, DeepWriteable, ErrorInfo, ErrorInfoExtensionPrefix, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
+import { ActionedUser, CommitOrdering, DateType, DeepWriteable, ErrorInfo, ErrorInfoExtensionPrefix, GitCommit, GitCommitDetails, GitCommitStash, GitConfigLocation, GitFileChange, GitFileStatus, GitPushBranchMode, GitRepoConfig, GitRepoConfigBranches, GitResetMode, GitSignature, GitSignatureStatus, GitStash, GitTagDetails, MergeActionOn, RebaseActionOn, SquashMessageFormat, TagType, Writeable } from './types';
 import { GitExecutable, GitVersionRequirement, UNABLE_TO_FIND_GIT_MSG, UNCOMMITTED, abbrevCommit, constructIncompatibleGitVersionMessage, doesVersionMeetRequirement, getPathFromStr, getPathFromUri, openGitTerminal, pathWithTrailingSlash, realpath, resolveSpawnOutput, showErrorMessage } from './utils';
 import { Disposable } from './utils/disposable';
 import { Event } from './utils/event';
@@ -308,7 +308,7 @@ export class DataSource extends Disposable {
 			return {
 				config: {
 					branches: branches,
-					 authors,
+					authors,
 					diffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffTool),
 					guiDiffTool: getConfigValue(consolidatedConfigs, GitConfigKey.DiffGuiTool),
 					pushDefault: getConfigValue(consolidatedConfigs, GitConfigKey.RemotePushDefault),
@@ -1252,6 +1252,28 @@ export class DataSource extends Disposable {
 	}
 
 	/**
+	 * Create a Patch from a stash.
+	 * @param repo The path of the repository.
+	 * @param selector The selector of the stash.
+	 * @returns The ErrorInfo from the executed command.
+	 */
+	public async patchFromStash(repo: string, selector: string) {
+		let args = ['stash', 'show', '--include-untracked', '-p', selector];
+
+		const result = await this.spawnGit(args, repo, (stdout) => stdout);
+
+		await vscode.window.showSaveDialog({
+			defaultUri: vscode.Uri.file(`${repo}/.patch`)
+		}).then(fileInfos => {
+			if (fileInfos) {
+				fs.writeFileSync(fileInfos.path, result);
+			}
+		});
+
+		return result.startsWith('diff --git ') ? null : result;
+	}
+
+	/**
 	 * Drop a stash in a repository.
 	 * @param repo The path of the repository.
 	 * @param selector The selector of the stash.
@@ -1548,7 +1570,7 @@ export class DataSource extends Disposable {
 		if (onlyFollowFirstParent) {
 			args.push('--first-parent');
 		}
-		if(authors !== null) {
+		if (authors !== null) {
 			for (let i = 0; i < authors.length; i++) {
 				args.push(`--author=${authors[i]} <`);
 			}

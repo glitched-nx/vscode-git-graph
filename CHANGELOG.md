@@ -1,6 +1,7 @@
 # Change Log
 
 ## 1.32.0 - 2024-10-16
+* Create a patch file from the stash.
 * Enable filtering by double-clicking the author column. Thanks [@LariWa](https://github.com/LariWa)
 
 ## 1.31.2 - 2024-10-13
