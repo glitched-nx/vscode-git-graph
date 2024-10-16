@@ -842,6 +842,9 @@ body.tagLabelsRightAligned .gitRef.tag{
 #controls.singleRepo .dropdownCurrentValue{
 	max-width:40vw;
 }
+#controls #authorControl.hide{
+	display:none;
+}
 
 #currentBtn, #terminalBtn, #settingsBtn, #fetchBtn, #refreshBtn{
 	position:absolute;
