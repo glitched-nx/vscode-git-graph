@@ -1,5 +1,8 @@
 # Change Log
 
+## 1.32.0 - 2024-10-16
+* Enable filtering by double-clicking the author column. Thanks [@LariWa](https://github.com/LariWa)
+
 ## 1.31.2 - 2024-10-13
 * Highlight checked out commit head.
 * Move "Show Remote Branches" checkbox under settings menu.

@@ -192,6 +192,8 @@ class GitGraphView {
 		}
 
 		alterClass(this.controlsElem, 'singleRepo', Object.keys(repos).length === 1);
+		alterClass(this.controlsElem.querySelector('span#authorControl') as HTMLElement, 'hide', true);
+
 		this.renderRepoDropdownOptions(newRepo);
 
 		if (loadViewTo !== null) {
@@ -2345,6 +2347,13 @@ class GitGraphView {
 					this.checkoutBranchAction(refName, isHead ? null : unescapeHtml((isRemoteCombinedWithHead ? <HTMLElement>eventTarget : eventElem).dataset.remote!), null, target);
 				}
 			}
+
+			const target = (<HTMLElement>eventTarget);
+			if (target && target.classList.contains('tableColHeader') && target.classList.contains('authorCol')) {
+				(document.getElementById('authorControl')!).classList.toggle('hide');
+				this.authorDropdown.setOptions(this.getAuthorOptions(), this.currentAuthors);
+			}
+
 		});
 
 		// Register ContextMenu Event Handler
