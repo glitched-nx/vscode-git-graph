@@ -1,6 +1,7 @@
 # Change Log
 
 ## 1.32.0 - 2024-10-16
+* Include a feature to update submodules.
 * Create a patch file from the stash.
 * Enable filtering by double-clicking the author column. Thanks [@LariWa](https://github.com/LariWa)
 

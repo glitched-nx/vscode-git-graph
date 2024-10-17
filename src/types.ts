@@ -221,6 +221,7 @@ export interface GitRepoState {
 	showStashes: BooleanOverride;
 	showTags: BooleanOverride;
 	workspaceFolderIndex: number | null;
+	hasSubmodule: boolean;
 }
 
 
@@ -354,6 +355,7 @@ export interface ContextMenuActionsVisibility {
 		readonly merge: boolean;
 		readonly rebase: boolean;
 		readonly push: boolean;
+		readonly submodule: boolean;
 		readonly viewIssue: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
@@ -391,6 +393,7 @@ export interface ContextMenuActionsVisibility {
 		readonly fetch: boolean;
 		readonly merge: boolean;
 		readonly pull: boolean;
+		readonly submodule: boolean;
 		readonly viewIssue: boolean;
 		readonly createPullRequest: boolean;
 		readonly createArchive: boolean;
@@ -497,6 +500,7 @@ export interface DialogDefaults {
 	};
 	readonly pullBranch: {
 		readonly noFastForward: boolean,
+		readonly noCommit: boolean,
 		readonly squash: boolean
 	};
 	readonly rebase: {
@@ -646,6 +650,7 @@ export interface RequestCheckoutBranch extends RepoRequest {
 		readonly branchName: string;
 		readonly remote: string;
 		readonly createNewCommit: boolean;
+		readonly noCommit: boolean;
 		readonly squash: boolean;
 	} | null; // NULL => Don't pull after checking out
 }
@@ -954,6 +959,7 @@ export interface ResponseLoadRepoInfo extends ResponseWithErrorInfo {
 	readonly remotes: ReadonlyArray<string>;
 	readonly stashes: ReadonlyArray<GitStash>;
 	readonly isRepo: boolean;
+	readonly hasSubmodule: boolean;
 }
 
 export interface RequestLoadRepos extends BaseMessage {
@@ -1057,6 +1063,7 @@ export interface RequestPullBranch extends RepoRequest {
 	readonly branchName: string;
 	readonly remote: string;
 	readonly createNewCommit: boolean;
+	readonly noCommit: boolean;
 	readonly squash: boolean;
 }
 export interface ResponsePullBranch extends ResponseWithErrorInfo {
@@ -1202,6 +1209,17 @@ export interface ResponseStartCodeReview extends ResponseWithErrorInfo {
 	readonly compareWithHash: string | null;
 }
 
+export interface RequestUpdateSubmodules extends RepoRequest {
+	readonly command: 'updateSubmodules';
+	readonly currentBranch: string;
+	readonly init: boolean;
+	readonly recursive: boolean;
+	readonly remote: string | null;
+}
+export interface ResponseUpdateSubmodules extends ResponseWithErrorInfo {
+	readonly command: 'updateSubmodules';
+}
+
 export interface RequestTagDetails extends RepoRequest {
 	readonly command: 'tagDetails';
 	readonly tagName: string;
@@ -1322,6 +1340,7 @@ export type RequestMessage =
 	| RequestStartCodeReview
 	| RequestTagDetails
 	| RequestUpdateCodeReview
+	| RequestUpdateSubmodules
 	| RequestViewDiff
 	| RequestViewDiffWithWorkingFile
 	| RequestViewFileAtRevision
@@ -1384,6 +1403,7 @@ export type ResponseMessage =
 	| ResponseStartCodeReview
 	| ResponseTagDetails
 	| ResponseUpdateCodeReview
+	| ResponseUpdateSubmodules
 	| ResponseViewDiff
 	| ResponseViewDiffWithWorkingFile
 	| ResponseViewFileAtRevision

@@ -4,6 +4,7 @@ View a Git Graph of your repository, and easily perform Git actions from the gra
 
 Additional feature improvements:
 
+* Include a feature to update submodules
 * Create a patch file from the stash
 * Enable filtering by double-clicking the author column
 * Highlight checked out commit head

@@ -207,7 +207,7 @@ export class GitGraphView extends Disposable {
 			case 'checkoutBranch':
 				errorInfos = [await this.dataSource.checkoutBranch(msg.repo, msg.branchName, msg.remoteBranch)];
 				if (errorInfos[0] === null && msg.pullAfterwards !== null) {
-					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.pullAfterwards.branchName, msg.pullAfterwards.remote, msg.pullAfterwards.createNewCommit, msg.pullAfterwards.squash));
+					errorInfos.push(await this.dataSource.pullBranch(msg.repo, msg.pullAfterwards.branchName, msg.pullAfterwards.remote, msg.pullAfterwards.createNewCommit, msg.pullAfterwards.noCommit, msg.pullAfterwards.squash));
 				}
 				this.sendMessage({
 					command: 'checkoutBranch',
@@ -422,6 +422,7 @@ export class GitGraphView extends Disposable {
 			case 'loadRepoInfo':
 				this.loadRepoInfoRefreshId = msg.refreshId;
 				let repoInfo = await this.dataSource.getRepoInfo(msg.repo, msg.showRemoteBranches, msg.showStashes, msg.hideRemotes), isRepo = true;
+				let hasSubmodule = await this.dataSource.checkGitModuleFile(msg.repo);
 				if (repoInfo.error) {
 					// If an error occurred, check to make sure the repo still exists
 					isRepo = (await this.dataSource.repoRoot(msg.repo)) !== null;
@@ -431,7 +432,8 @@ export class GitGraphView extends Disposable {
 					command: 'loadRepoInfo',
 					refreshId: msg.refreshId,
 					...repoInfo,
-					isRepo: isRepo
+					isRepo: isRepo,
+					hasSubmodule: hasSubmodule
 				});
 				if (msg.repo !== this.currentRepo) {
 					this.currentRepo = msg.repo;
@@ -503,7 +505,7 @@ export class GitGraphView extends Disposable {
 			case 'pullBranch':
 				this.sendMessage({
 					command: 'pullBranch',
-					error: await this.dataSource.pullBranch(msg.repo, msg.branchName, msg.remote, msg.createNewCommit, msg.squash)
+					error: await this.dataSource.pullBranch(msg.repo, msg.branchName, msg.remote, msg.createNewCommit, msg.noCommit, msg.squash)
 				});
 				break;
 			case 'pushBranch':
@@ -604,6 +606,12 @@ export class GitGraphView extends Disposable {
 				this.sendMessage({
 					command: 'updateCodeReview',
 					error: await this.extensionState.updateCodeReview(msg.repo, msg.id, msg.remainingFiles, msg.lastViewedFile)
+				});
+				break;
+			case 'updateSubmodules':
+				this.sendMessage({
+					command: 'updateSubmodules',
+					error: await this.dataSource.updateSubmodules(msg.repo, msg.currentBranch, msg.init, msg.recursive, msg.remote)
 				});
 				break;
 			case 'viewDiff':
@@ -729,6 +737,7 @@ export class GitGraphView extends Disposable {
 					<span id="repoControl"><span class="unselectable">Repo: </span><div id="repoDropdown" class="dropdown"></div></span>
 					<span id="branchControl"><span class="unselectable">Branches: </span><div id="branchDropdown" class="dropdown"></div></span>
 					<span id="authorControl"><span class="unselectable">Authors: </span><div id="authorDropdown" class="dropdown"></div></span>
+
 					<div id="currentBtn" title="Current"></div>
 					<div id="terminalBtn" title="Open a Terminal for this Repository"></div>
 					<div id="settingsBtn" title="Repository Settings"></div>
