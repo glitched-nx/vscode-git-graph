@@ -1214,7 +1214,6 @@ export interface RequestUpdateSubmodules extends RepoRequest {
 	readonly currentBranch: string;
 	readonly init: boolean;
 	readonly recursive: boolean;
-	readonly alsoCheckout: boolean;
 	readonly remote: string | null;
 }
 export interface ResponseUpdateSubmodules extends ResponseWithErrorInfo {

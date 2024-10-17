@@ -944,7 +944,7 @@ export class DataSource extends Disposable {
 				.map(line => line.replace('Entering \'', '').replace('\'', ''))
 				.map(line => repo + '/' + line);
 			return result;
-		}).then((subject) => subject, () => null);
+		}).then((subject) => subject);
 	}
 
 	/**
@@ -956,7 +956,7 @@ export class DataSource extends Disposable {
 	 * @param remote The name of the remote upstream.
 	 * @returns The ErrorInfo from the executed command.
 	 */
-	public async updateSubmodules(repo: string, currentBranch: string, init: boolean, recursive: boolean, alsoCheckout: boolean, remote: string | null) {
+	public async updateSubmodules(repo: string, currentBranch: string, init: boolean, recursive: boolean, remote: string | null) {
 		const args = ['submodule', 'update'];
 		const submodules_args = ['submodule', 'foreach'];
 
@@ -969,40 +969,36 @@ export class DataSource extends Disposable {
 		}
 		const result = await this.runGitCommand(args, repo);
 
-		if (alsoCheckout || remote) {
+		const submodules = await this.getSubmodulesRepo(submodules_args, repo);
 
-			const submodules = await this.getSubmodulesRepo(submodules_args, repo);
+		if (!submodules) return result;
 
-			if (!submodules) return result;
+		const targetBranches = [currentBranch, 'develop', 'master', 'main'];
 
-			for (const submodulePath of submodules) {
-				const branchesContainingCommit = await this.spawnGit(['branch', '--all', '--contains'], submodulePath, (stdout) => {
-					let result = stdout.trim()
-						.split('\n')
-						.filter(line => !line.includes('detached'))
-						.map(line => line.match(/remotes\/[^/]+\/[^ ]+/g)?.[0]?.replace('remotes/origin/', ''))
-						.filter(branch => branch && branch.includes(currentBranch || ''));
-					return result;
+		for (const submodulePath of submodules) {
+			const branchePointsAtCommit = await this.spawnGit(['branch', '--remote', '--points-at', 'HEAD'], submodulePath, (stdout) => {
+				let result = stdout.split('\n')
+					.filter(line => line && !line.includes('->'))
+					.map(branch => branch.split('/')[1].trim())
+					.find(branch => targetBranches.includes(branch));
+				return result;
+			});
+
+			if (!(branchePointsAtCommit)) continue;
+
+			await this.checkoutBranch(submodulePath, branchePointsAtCommit, null);
+
+			if (remote) {
+				let localHead = await this.spawnGit(['rev-parse', '@'], submodulePath, (stdout) => {
+					return stdout.trim();
 				});
 
-				if (!(branchesContainingCommit[0] && branchesContainingCommit[0] !== 'HEAD')) continue;
+				let upstreamHead = await this.spawnGit(['rev-parse', '@{u}'], submodulePath, (stdout) => {
+					return stdout.trim();
+				});
 
-				if (alsoCheckout) {
-					await this.checkoutBranch(submodulePath, currentBranch, null);
-				}
-
-				if (remote) {
-					let localHead = await this.spawnGit(['rev-parse', '@'], submodulePath, (stdout) => {
-						return stdout.trim();
-					});
-
-					let upstreamHead = await this.spawnGit(['rev-parse', '@{u}'], submodulePath, (stdout) => {
-						return stdout.trim();
-					});
-
-					if (localHead !== upstreamHead) {
-						this.pullBranch(submodulePath, currentBranch, remote, false, true, false);
-					}
+				if (localHead !== upstreamHead) {
+					this.pullBranch(submodulePath, branchePointsAtCommit, remote, false, true, false);
 				}
 			}
 		}

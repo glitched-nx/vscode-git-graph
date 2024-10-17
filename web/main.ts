@@ -1759,8 +1759,7 @@ class GitGraphView {
 	private updateSubmodulesAction(refName: string, remote: string | null, target: DialogTarget & (CommitTarget | RefTarget)) {
 		const inputs: DialogInput[] = [
 			{ type: DialogInputType.Checkbox, name: 'init', value: true },
-			{ type: DialogInputType.Checkbox, name: 'recursive', value: true },
-			{ type: DialogInputType.Checkbox, name: 'checkout submodule\'s branch too', value: true }
+			{ type: DialogInputType.Checkbox, name: 'recursive', value: true }
 		];
 
 		dialog.showForm('Are you sure you want to <b> update' + (remote ? ' and pull' : '') + '</b> submodule(s) for the branch <b><i>' + escapeHtml(refName) + '</i></b>' + '?', inputs, 'Yes, update', (values) => {
@@ -1770,7 +1769,6 @@ class GitGraphView {
 				currentBranch: this.gitBranchHead || '',
 				init: <boolean>values[0],
 				recursive: <boolean>values[1],
-				alsoCheckout: <boolean>values[2],
 				remote: remote
 			}, 'Updating submodules');
 		}, target);

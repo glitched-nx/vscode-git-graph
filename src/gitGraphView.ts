@@ -611,7 +611,7 @@ export class GitGraphView extends Disposable {
 			case 'updateSubmodules':
 				this.sendMessage({
 					command: 'updateSubmodules',
-					error: await this.dataSource.updateSubmodules(msg.repo, msg.currentBranch, msg.init, msg.recursive, msg.alsoCheckout, msg.remote)
+					error: await this.dataSource.updateSubmodules(msg.repo, msg.currentBranch, msg.init, msg.recursive, msg.remote)
 				});
 				break;
 			case 'viewDiff':
