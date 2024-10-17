@@ -517,7 +517,13 @@ export function openGitTerminal(cwd: string, gitPath: string, command: string | 
 	const shell = getConfig().integratedTerminalShell;
 	if (shell !== '') options.shellPath = shell;
 
-	const terminal = vscode.window.createTerminal(options);
+	let terminal = vscode.window.terminals.find(t => t.name === options.name);
+
+	// Terminal doesn't exist, create a new one
+	if (!terminal) {
+		terminal = vscode.window.createTerminal(options);
+	}
+
 	if (command !== null) {
 		terminal.sendText('git ' + command);
 	}
