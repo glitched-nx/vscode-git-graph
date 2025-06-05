@@ -1,5 +1,31 @@
 # Change Log
 
+## 1.31.5 - 2025-05-17
+* #48 Fix file view. Bullets were added when toggling file tree/file list view. Thanks [@LariWa](https://github.com/LariWa).
+* #30 Add setting for selection of single branch and/or author (thanks [@rgeorgiev583](https://github.com/rgeorgiev583)) and  
+#52 Implement multi selection using Ctrl (thanks [@LariWa](https://github.com/LariWa)).
+This can be activated with the following settings:
+  * `git-graph.repository.singleBranchSelect`
+  * `git-graph.repository.singleAuthorSelect`
+  
+* #56 Display "Select in Branches Dropdown" in the context menu also when "Show All" in the branches filter is selected. Thanks [@LariWa](https://github.com/LariWa).
+
+## 1.31.4 - 2025-03-26
+
+* #47 Fix "Commit summary always hides when switching focus(#46)". Thanks [@LariWa](https://github.com/LariWa). 
+The setting `git-graph.commitDetailsView.initiallyHideSummary` is removed as Git Graph remembers the last state (per folder).
+
+## 1.31.3 - 2025-03-13
+
+* #3 Add button to collapse commit summary. Thanks [@LariWa](https://github.com/LariWa). The setting `git-graph.commitDetailsView.initiallyHideSummary` controls whether the commit summary is collapsed (hidden) or expanded when starting Git Graph.
+
+## 1.31.2 - 2025-02-14
+
+* Add checkbox 'Allow unrelated histories' when merge action. Thanks [@LaksVister](https://github.com/LaksVister).
+* New setting `git-graph.toolbarButtonVisibility` to configure the visibility of some items of the toolbar. For example: `{"Remotes": true, "Simplify": true}`
+* #33 Add simplifyByDecoration checkbox. Thanks [@XUJINKAI](https://github.com/XUJINKAI).
+* #38 Fix right clicks triggers native context menu on macOS. Thanks [@ipcjs](https://github.com/ipcjs).
+
 ## 1.31.1 - 2024-05-25
 * #33 Add HEAD in branch filter. Thanks [@ipcjs](https://github.com/ipcjs).
     This will set the branch filter to the current branch if `HEAD` is selected.

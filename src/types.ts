@@ -218,9 +218,11 @@ export interface GitRepoState {
 	pullRequestConfig: PullRequestConfig | null;
 	showRemoteBranches: boolean;
 	showRemoteBranchesV2: BooleanOverride;
+	simplifyByDecoration: BooleanOverride;
 	showStashes: BooleanOverride;
 	showTags: BooleanOverride;
 	workspaceFolderIndex: number | null;
+	isCdvSummaryHidden: boolean;
 }
 
 
@@ -261,10 +263,14 @@ export interface GitGraphViewConfig {
 	readonly onRepoLoad: OnRepoLoadConfig;
 	readonly referenceLabels: ReferenceLabelsConfig;
 	readonly repoDropdownOrder: RepoDropdownOrder;
+	readonly singleAuthorSelect: boolean;
+	readonly singleBranchSelect: boolean;
 	readonly showRemoteBranches: boolean;
+	readonly simplifyByDecoration: boolean;
 	readonly showStashes: boolean;
 	readonly showTags: boolean;
 	readonly stickyHeader: boolean;
+	readonly toolbarButtonVisibility: ToolbarButtonVisibility;
 }
 
 export interface GitGraphViewGlobalState {
@@ -458,6 +464,11 @@ export interface DefaultColumnVisibility {
 	readonly commit: boolean;
 }
 
+export interface ToolbarButtonVisibility {
+	readonly remotes: boolean;
+	readonly simplify: boolean;
+}
+
 export interface DialogDefaults {
 	readonly addTag: {
 		readonly pushToRemote: boolean,
@@ -489,6 +500,7 @@ export interface DialogDefaults {
 	readonly merge: {
 		readonly noCommit: boolean,
 		readonly noFastForward: boolean,
+		readonly allowUnrelatedHistories: boolean,
 		readonly squash: boolean
 	};
 	readonly popStash: {
@@ -911,6 +923,7 @@ export interface RequestLoadCommits extends RepoRequest {
 	readonly maxCommits: number;
 	readonly showTags: boolean;
 	readonly showRemoteBranches: boolean;
+	readonly simplifyByDecoration: boolean;
 	readonly includeCommitsMentionedByReflogs: boolean;
 	readonly onlyFollowFirstParent: boolean;
 	readonly commitOrdering: CommitOrdering;
@@ -942,6 +955,7 @@ export interface RequestLoadRepoInfo extends RepoRequest {
 	readonly command: 'loadRepoInfo';
 	readonly refreshId: number;
 	readonly showRemoteBranches: boolean;
+	readonly simplifyByDecoration: boolean;
 	readonly showStashes: boolean;
 	readonly hideRemotes: ReadonlyArray<string>;
 }
@@ -976,6 +990,7 @@ export interface RequestMerge extends RepoRequest {
 	readonly obj: string;
 	readonly actionOn: MergeActionOn;
 	readonly createNewCommit: boolean;
+	readonly allowUnrelatedHistories: boolean;
 	readonly squash: boolean;
 	readonly noCommit: boolean;
 }

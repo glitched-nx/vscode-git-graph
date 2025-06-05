@@ -25,7 +25,8 @@ import {
 	RepoDropdownOrder,
 	SquashMessageFormat,
 	TabIconColourTheme,
-	TagType
+	TagType,
+	ToolbarButtonVisibility
 } from './types';
 
 const VIEW_COLUMN_MAPPING: { [column: string]: vscode.ViewColumn } = {
@@ -169,6 +170,18 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.toolbarButtonVisibility` Extension Setting.
+	 */
+	get toolbarButtonVisibility(): ToolbarButtonVisibility {
+		let obj: any = this.config.get('toolbarButtonVisibility', {});
+		if (typeof obj === 'object' && obj !== null && typeof obj['Remotes'] === 'boolean' && typeof obj['Simplify'] === 'boolean') {
+			return { remotes: obj['Remotes'], simplify: obj['Simplify'] };
+		} else {
+			return { remotes: true, simplify: true };
+		}
+	}
+
+	/**
 	 * Get the value of the `git-graph.dialog.*` Extension Settings.
 	 */
 	get dialogDefaults(): DialogDefaults {
@@ -207,6 +220,7 @@ class Config {
 			merge: {
 				noCommit: !!this.config.get('dialog.merge.noCommit', false),
 				noFastForward: !!this.config.get('dialog.merge.noFastForward', true),
+				allowUnrelatedHistories: !!this.config.get('dialog.merge.allowUnrelatedHistories', false),
 				squash: !!this.config.get('dialog.merge.squashCommits', false)
 			},
 			popStash: {
@@ -451,6 +465,20 @@ class Config {
 	}
 
 	/**
+	 * Get the value of the `git-graph.repository.singleAuthorSelect` Extension Setting.
+	 */
+	get singleAuthorSelect() {
+		return !!this.config.get('repository.singleAuthorSelect', true);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.singleBranchSelect` Extension Setting.
+	 */
+	get singleBranchSelect() {
+		return !!this.config.get('repository.singleBranchSelect', true);
+	}
+
+	/**
 	 * Get the value of the `git-graph.repository.showCommitsOnlyReferencedByTags` Extension Setting.
 	 */
 	get showCommitsOnlyReferencedByTags() {
@@ -462,6 +490,13 @@ class Config {
 	 */
 	get showRemoteBranches() {
 		return !!this.config.get('repository.showRemoteBranches', true);
+	}
+
+	/**
+	 * Get the value of the `git-graph.repository.simplifyByDecoration` Extension Setting.
+	 */
+	get simplifyByDecoration() {
+		return !!this.config.get('repository.simplifyByDecoration', false);
 	}
 
 	/**
